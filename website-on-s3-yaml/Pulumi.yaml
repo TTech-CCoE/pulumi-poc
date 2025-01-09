@@ -1,4 +1,4 @@
-name: AWS-S3-YAML
+name: website-on-s3-yaml
 description: A minimal AWS Pulumi YAML program
 runtime: yaml
 resources:
