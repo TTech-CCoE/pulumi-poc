@@ -1,0 +1,36 @@
+# Diretório de estado e cache do Pulumi
+.pulumi/
+.pulumi-dev/
+
+# Arquivos de estado do Pulumi (contém informações sobre a infraestrutura)
+Pulumi.dev.yaml
+Pulumi.prod.yaml
+Pulumi.*.yaml
+Pulumi.stack.yaml
+
+# Credenciais AWS e chaves de acesso (caso use credenciais locais)
+.aws/
+*.pem
+*.key
+
+# Logs e arquivos temporários
+*.log
+*.bak
+*.swp
+
+# Python (caso use scripts auxiliares)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.env
+
+# Node.js (caso tenha dependências JavaScript/TypeScript)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
