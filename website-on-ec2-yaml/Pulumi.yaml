@@ -1,0 +1,45 @@
+name: website-on-ec2-yaml
+description: Deploy de uma homepage em uma instância EC2 com Pulumi YAML
+runtime: yaml
+resources:
+  # Criar um Security Group para permitir acesso HTTP (porta 80)
+  web-security-group:
+    type: aws:ec2:SecurityGroup
+    properties:
+      description: "Habilita o tráfego HTTP para a homepage"
+      ingress:
+        - protocol: tcp
+          fromPort: 80
+          toPort: 80
+          cidrBlocks: ["0.0.0.0/0"]
+      egress:
+        - protocol: "-1"
+          fromPort: 0
+          toPort: 0
+          cidrBlocks: ["0.0.0.0/0"]
+
+  # Criar uma instância EC2
+  web-server:
+    type: aws:ec2:Instance
+    properties:
+      ami: ami-0c55b159cbfafe1f0 # Amazon Linux 2 (Verifique se esta é a mais recente para sua região)
+      instanceType: t2.micro
+      securityGroups: ["${web-security-group.name}"]
+      userData: |
+        #!/bin/bash
+        yum update -y
+        yum install -y httpd
+        systemctl start httpd
+        systemctl enable httpd
+        echo "<h1>Bem-vindo à minha homepage na EC2!</h1>" > /var/www/html/index.html
+
+  # Criar um endereço IP elástico para acesso público
+  elastic-ip:
+    type: aws:ec2:Eip
+    properties:
+      instance: ${web-server.id}
+
+outputs:
+  instanceId: ${web-server.id}
+  publicIp: ${elastic-ip.publicIp}
+  websiteUrl: http://${elastic-ip.publicIp}
