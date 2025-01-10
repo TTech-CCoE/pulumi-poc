@@ -22,7 +22,7 @@ resources:
   web-server:
     type: aws:ec2:Instance
     properties:
-      ami: ami-0c55b159cbfafe1f0 # Amazon Linux 2 (Verifique se esta é a mais recente para sua região)
+      ami: ami-0ca9fb66e076a6e32 # Amazon Linux 2 (Verifique se esta é a mais recente para sua região)
       instanceType: t2.micro
       securityGroups: ["${web-security-group.name}"]
       userData: |
