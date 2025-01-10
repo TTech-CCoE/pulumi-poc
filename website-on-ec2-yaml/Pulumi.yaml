@@ -6,7 +6,7 @@ resources:
   web-security-group:
     type: aws:ec2:SecurityGroup
     properties:
-      description: "Habilita o tráfego HTTP para a homepage"
+      description: "Habilita o trafego HTTP para a homepage"
       ingress:
         - protocol: tcp
           fromPort: 80
@@ -24,7 +24,7 @@ resources:
     properties:
       ami: ami-0c55b159cbfafe1f0 # Amazon Linux 2 (Verifique se esta é a mais recente para sua região)
       instanceType: t2.micro
-      securityGroups: "${web-security-group.name}"
+      securityGroups: ["${web-security-group.name}"]
       userData: |
         #!/bin/bash
         yum update -y
