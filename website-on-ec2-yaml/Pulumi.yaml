@@ -24,7 +24,7 @@ resources:
     properties:
       ami: ami-0c55b159cbfafe1f0 # Amazon Linux 2 (Verifique se esta é a mais recente para sua região)
       instanceType: t2.micro
-      securityGroups: ["${web-security-group.name}"]
+      securityGroups: "${web-security-group.name}"
       userData: |
         #!/bin/bash
         yum update -y
