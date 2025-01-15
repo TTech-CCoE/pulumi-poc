@@ -1,0 +1,67 @@
+name: Active-Pulumi-Website-on-S3-Python
+
+on: 
+  workflow_dispatch:
+    inputs:
+      bucket-name:
+        description: 'Nome do bucket'
+        required: true
+        default: 'pulumi'
+      aws-region:
+        description: 'Região AWS'
+        required: true
+        default: 'us-east-1'
+
+jobs: 
+  Pulumi-Up:
+    runs-on: ubuntu-latest
+    
+    env:
+      BUCKET_NAME: ${{ github.event.inputs.bucket-name }}
+      AWS_REGION:  ${{ github.event.inputs.aws-region }} 
+      
+    steps:
+    
+      - name: Debug Environment Variables
+        run: env
+
+      # 1. Repository Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Install Python 3.10
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      #3. Install Python Dependencies based-on requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ./website-on-s3-python/requirements.txt
+          
+      # 4. Install Pulumi CLI
+      - name: Install Pulumi
+        uses: pulumi/actions@v4
+        with:
+          version: latest
+
+      # 5. Configurar credenciais da nuvem
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 6. Executar o Pulumi
+      - name: Pulumi up
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        run: | 
+          cd ./website-on-s3-python
+          pulumi stack select <stack> # Selecione ou crie a stack
+          pulumi up --yes
+    
+  
