@@ -44,6 +44,20 @@ resources:
         - ${ownership-controls}
         - ${website}
 
+  imagem.png:
+      type: aws:s3:BucketObject
+      properties:
+        bucket: ${my-bucket.id}
+        source:
+          fn::fileAsset: ./Platform_engineering.png
+        contentType: image/png
+        acl: public-read
+      options:
+        dependsOn:
+          - ${public-access-block}
+          - ${ownership-controls}
+          - ${website}
+
 outputs:
   # Export the name of the bucket
   bucketName: ${my-bucket.id}
