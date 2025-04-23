@@ -1,35 +1,25 @@
-name: website-on-s3-yaml
-description: A minimal AWS Pulumi YAML program
+name: AWS-S3-CloudFront-YAML
 runtime: yaml
+description: Static website with private S3 + CloudFront (OAC)
+
 resources:
-  # Create an AWS resource (S3 Bucket)
+  # S3 Bucket privado
   my-bucket:
     type: aws:s3:BucketV2
     properties:
       bucket: "ttech-pulumi-yaml"
 
-  # Create an S3 Bucket object
-
-  website:
-    type: aws:s3:BucketWebsiteConfigurationV2
-    properties:
-      bucket: ${my-bucket.id}
-      indexDocument:
-        suffix: index.html
-
-  ownership-controls:
-    type: aws:s3:BucketOwnershipControls
-    properties:
-      bucket: ${my-bucket.id}
-      rule:
-        objectOwnership: ObjectWriter
-
+  # Public Access Block - impede acesso direto ao S3
   public-access-block:
     type: aws:s3:BucketPublicAccessBlock
     properties:
       bucket: ${my-bucket.id}
-      blockPublicAcls: false
+      blockPublicAcls: true
+      blockPublicPolicy: true
+      ignorePublicAcls: true
+      restrictPublicBuckets: true
 
+  # Upload do index.html
   index.html:
     type: aws:s3:BucketObject
     properties:
@@ -37,32 +27,83 @@ resources:
       source:
         fn::fileAsset: ./index.html
       contentType: text/html
-      acl: public-read
     options:
       dependsOn:
         - ${public-access-block}
-        - ${ownership-controls}
-        - ${website}
 
+  # Upload da imagem
   imagem.png:
-      type: aws:s3:BucketObject
-      properties:
-        bucket: ${my-bucket.id}
-        source:
-          fn::fileAsset: ./Platform_engineering.png
-        contentType: image/png
-        acl: public-read
-      options:
-        dependsOn:
-          - ${public-access-block}
-          - ${ownership-controls}
-          - ${website}
+    type: aws:s3:BucketObject
+    properties:
+      bucket: ${my-bucket.id}
+      source:
+        fn::fileAsset: ./Platform_engineering.png
+      contentType: image/png
+    options:
+      dependsOn:
+        - ${public-access-block}
+
+  # Origin Access Control (OAC)
+  cloudfront-oac:
+    type: aws:cloudfront:OriginAccessControl
+    properties:
+      name: my-oac
+      description: OAC for S3 access
+      originAccessControlOriginType: s3
+      signingBehavior: always
+      signingProtocol: sigv4
+
+  # CloudFront Distribution com OAC
+  cdn:
+    type: aws:cloudfront:Distribution
+    properties:
+      enabled: true
+      isIpv6Enabled: true
+      defaultRootObject: index.html
+
+      origins:
+        - originId: s3-origin
+          domainName: ${my-bucket.bucketRegionalDomainName}
+          originAccessControlId: ${cloudfront-oac.id}
+          s3OriginConfig:
+            originAccessIdentity: ""
+
+      defaultCacheBehavior:
+        targetOriginId: s3-origin
+        viewerProtocolPolicy: redirect-to-https
+        allowedMethods:
+          - GET
+          - HEAD
+        cachedMethods:
+          - GET
+          - HEAD
+        compress: true
+        forwardedValues:
+          queryString: false
+          cookies:
+            forward: none
+
+      restrictions:
+        geoRestriction:
+          restrictionType: none
+
+      viewerCertificate:
+        cloudfrontDefaultCertificate: true
+
+  # Permissão para CloudFront acessar o bucket
+  bucket-policy:
+    type: aws:s3:BucketPolicy
+    properties:
+      bucket: ${my-bucket.id}
+      policy:
+        fn::toJSON:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: cloudfront.amazonaws.com
+              Action: "s3:GetObject"
+              Resource: "arn:aws:s3:::${my-bucket.id}/*"
 
 outputs:
-  # Export the name of the bucket
-  bucketName: ${my-bucket.id}
-  bucketEndpoint: http://${website.websiteEndpoint}
-config:
-  pulumi:tags:
-    value:
-      pulumi:template: aws-yaml
+  cloudfront_url: https://${cdn.domainName}/index.html
